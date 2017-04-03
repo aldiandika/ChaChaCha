@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -33,10 +34,12 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import android.text.format.DateFormat;
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -45,9 +48,12 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
 
     private static int SIGN_IN_REQUEST_CODE = 1;
+    private static final int REQUEST_IMAGE = 2;
+    private static final String LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif";
     private FirebaseListAdapter<ChatMassage> adapter;
     RelativeLayout activity_main;
     FloatingActionButton fab;
+    ImageButton addImage;
     private String mUsername;
     private String mPhotoUrl;
     private FirebaseAuth mfirebaseAuth;
@@ -93,6 +99,47 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 finish();
             }
         }
+        else if(requestCode == REQUEST_IMAGE){
+            if(resultCode == RESULT_OK){
+                if(data != null){
+                    final Uri uri = data.getData();
+                    FriendlyMassage friendlyMassage = new FriendlyMassage(null,mUsername,mPhotoUrl
+                            ,LOADING_IMAGE_URL);
+                    mfirebaseDatabaseReference.child("messages").push().setValue(friendlyMassage
+                            ,new DatabaseReference.CompletionListener(){
+                                @Override
+                                public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+                                    if(databaseError == null){
+                                        String key = databaseReference.getKey();
+                                        StorageReference storageReference = FirebaseStorage.getInstance()
+                                                .getReference(mfirebaseUser.getUid())
+                                                .child(key).child(uri.getLastPathSegment());
+                                        putImageInStorage(storageReference,uri,key);
+                                    }
+                                    else{
+                                        Snackbar.make(activity_main,"Unable to write massag to database",Snackbar.LENGTH_LONG).show();
+                                    }
+                                }
+                            });
+                }
+            }
+        }
+    }
+
+    private void putImageInStorage(StorageReference storageReference, Uri uri, final String key){
+        storageReference.putFile(uri).addOnCompleteListener(MainActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                if(task.isSuccessful()){
+                    FriendlyMassage friendlyMassage = new FriendlyMassage(null,mUsername,mPhotoUrl,
+                            task.getResult().getMetadata().getDownloadUrl().toString());
+                    mfirebaseDatabaseReference.child("messages").child(key).setValue(friendlyMassage);
+                }
+                else{
+                    Snackbar.make(activity_main,"Image Upload Not Successfull",Snackbar.LENGTH_LONG).show();
+                }
+            }
+        });
     }
 
     public static class MassageViewHolder extends RecyclerView.ViewHolder {
@@ -127,6 +174,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 //                FirebaseDatabase.getInstance().getReference().push().setValue(new ChatMassage(input.getText().toString(),
 //                        FirebaseAuth.getInstance().getCurrentUser().getEmail()));
 //                input.setText("");
+            }
+        });
+
+        addImage = (ImageButton)findViewById(R.id.addImage);
+        addImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
+                startActivityForResult(intent,2);
             }
         });
 
