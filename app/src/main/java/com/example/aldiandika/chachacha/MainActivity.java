@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             }
         }
         else if(requestCode == REQUEST_IMAGE){
-            if(requestCode == RESULT_OK){
+            if(resultCode == RESULT_OK){
                 if(data != null){
                     final Uri uri = data.getData();
                     FriendlyMassage friendlyMassage = new FriendlyMassage(null,mUsername,mPhotoUrl
