@@ -120,9 +120,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             @Override
             public void onClick(View v) {
                 EditText input = (EditText)findViewById(R.id.input);
-                FirebaseDatabase.getInstance().getReference().push().setValue(new ChatMassage(input.getText().toString(),
-                        FirebaseAuth.getInstance().getCurrentUser().getEmail()));
+                FriendlyMassage friendlyMassage = new FriendlyMassage(input.getText().toString(),mUsername,mPhotoUrl,null);
+                mfirebaseDatabaseReference.child("messages").push().setValue(friendlyMassage);
                 input.setText("");
+                //                EditText input = (EditText)findViewById(R.id.input);
+//                FirebaseDatabase.getInstance().getReference().push().setValue(new ChatMassage(input.getText().toString(),
+//                        FirebaseAuth.getInstance().getCurrentUser().getEmail()));
+//                input.setText("");
             }
         });
 
@@ -150,7 +154,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             Snackbar.make(activity_main,"Welcome "+FirebaseAuth.getInstance().getCurrentUser().getDisplayName(),
                     Snackbar.LENGTH_LONG).show();
             mUsername = mfirebaseUser.getDisplayName();
-//            mPhotoUrl = mfirebaseUser.getPhotoUrl().toString();
+
+            try {
+                mPhotoUrl = mfirebaseUser.getPhotoUrl().toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 //            displayChatMassage();
         }
 
