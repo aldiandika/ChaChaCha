@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">ChaChaCha</string>
+
+
+    <!-- AdMob ad unit IDs -->
+    <string name="banner_ad_unit_id" translatable="false">ca-app-pub-9108136624493391/7430866461</string>
 </resources>
