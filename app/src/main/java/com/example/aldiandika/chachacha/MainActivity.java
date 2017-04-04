@@ -2,6 +2,7 @@ package com.example.aldiandika.chachacha;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -27,6 +28,10 @@ import com.firebase.ui.auth.ui.email.*;
 import com.firebase.ui.auth.ui.email.SignInActivity;
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -42,8 +47,12 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import android.text.format.DateFormat;
+import android.widget.Toast;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 import java.util.Date;
+
+import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener{
 
@@ -63,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private FirebaseRecyclerAdapter<FriendlyMassage,MassageViewHolder> mfirebaseAdapter;
     private LinearLayoutManager mLinearLayoutManager;
     private RecyclerView mMessageRecyclerView;
+    private AdView mAdView;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -160,6 +170,52 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        MobileAds.initialize(getApplicationContext(), "ca-app-pub-9108136624493391~6233334860");
+
+        mAdView = (AdView) findViewById(R.id.ads);
+
+        mAdView.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+//                Toast.makeText(getApplicationContext(), "Ad is loaded!", Toast.LENGTH_SHORT).show();
+                Log.d("ADS","Ad is loaded!");
+            }
+
+            @Override
+            public void onAdClosed() {
+//                Toast.makeText(getApplicationContext(), "Ad is closed!", Toast.LENGTH_SHORT).show();
+                Log.d("ADS","Ad is closed!");
+            }
+
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+//                Toast.makeText(getApplicationContext(), "Ad failed to load! error code: " + errorCode, Toast.LENGTH_SHORT).show();
+                Log.d("ADS","Ad failed to load! error code: " + errorCode);
+            }
+
+            @Override
+            public void onAdLeftApplication() {
+//                Toast.makeText(getApplicationContext(), "Ad left application!", Toast.LENGTH_SHORT).show();
+                Log.d("ADS","Ad left application!");
+            }
+
+            @Override
+            public void onAdOpened() {
+//                Toast.makeText(getApplicationContext(), "Ad is opened!", Toast.LENGTH_SHORT).show();
+                Log.d("ADS","Ad is opened!");
+            }
+        });
+
+        String android_id = Settings.Secure.getString(getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+        Log.d("android id", android_id);
+
+//        AdRequest adRequest = new AdRequest.Builder().build();
+        AdRequest request = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)        // All emulators
+                .build();
+        mAdView.loadAd(request);
 
         activity_main = (RelativeLayout)findViewById(R.id.activity_main);
         fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -291,6 +347,32 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
         mMessageRecyclerView.setAdapter(mfirebaseAdapter);
+    }
+
+    @Override
+    public void onPause() {
+        if (mAdView != null) {
+            mAdView.pause();
+        }
+        super.onPause();
+    }
+
+    /** Called when returning to the activity */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mAdView != null) {
+            mAdView.resume();
+        }
+    }
+
+    /** Called before the activity is destroyed */
+    @Override
+    public void onDestroy() {
+        if (mAdView != null) {
+            mAdView.destroy();
+        }
+        super.onDestroy();
     }
 
 //    private void displayChatMassage(){
