@@ -1,11 +1,15 @@
 package com.example.aldiandika.chachacha;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -43,6 +47,7 @@ import com.google.firebase.crash.FirebaseCrash;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -51,7 +56,12 @@ import android.text.format.DateFormat;
 import android.widget.Toast;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.security.AccessController.getContext;
 
@@ -144,6 +154,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             @Override
             public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                 if(task.isSuccessful()){
+                    @SuppressWarnings("VisibleForTests")
                     FriendlyMassage friendlyMassage = new FriendlyMassage(null,mUsername,mPhotoUrl,
                             task.getResult().getMetadata().getDownloadUrl().toString());
                     mfirebaseDatabaseReference.child("messages").child(key).setValue(friendlyMassage);
@@ -173,6 +184,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
         }
     }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -234,7 +247,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 EditText input = (EditText)findViewById(R.id.input);
                 FriendlyMassage friendlyMassage = new FriendlyMassage(input.getText().toString(),mUsername,mPhotoUrl,null);
                 mfirebaseDatabaseReference.child("messages").push().setValue(friendlyMassage);
+                mfirebaseDatabaseReference.child("notificationRequest").push().setValue(friendlyMassage);
+//                sendNotificationToUser(mUsername,input.getText());
                 input.setText("");
+
                 //                EditText input = (EditText)findViewById(R.id.input);
 //                FirebaseDatabase.getInstance().getReference().push().setValue(new ChatMassage(input.getText().toString(),
 //                        FirebaseAuth.getInstance().getCurrentUser().getEmail()));
@@ -332,6 +348,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 }
 
                 viewHolder.messengerTextView.setText(model.getName());
+
                 if(model.getPhotoUrl() == null){
                     viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(MainActivity.this,R.drawable.ic_account));
                 }
@@ -402,6 +419,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 //        };
 //        listOfMassage.setAdapter(adapter);
 //    }
+
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
